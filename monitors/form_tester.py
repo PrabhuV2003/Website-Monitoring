@@ -1,0 +1,291 @@
+"""
+Form Tester - Tests form submissions on WordPress sites.
+"""
+import time
+import requests
+from typing import Any, Dict, List, Optional
+from bs4 import BeautifulSoup
+from .base_monitor import BaseMonitor, MonitorResult
+
+try:
+    from selenium import webdriver
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.chrome.service import Service
+    from webdriver_manager.chrome import ChromeDriverManager
+    SELENIUM_AVAILABLE = True
+except ImportError:
+    SELENIUM_AVAILABLE = False
+
+class FormTester(BaseMonitor):
+    """Tests form submissions and validation on WordPress sites."""
+    
+    @property
+    def name(self) -> str:
+        return "forms"
+    
+    def run(self) -> List[MonitorResult]:
+        """Run form tests."""
+        self.results = []
+        self.logger.info("Starting form tests")
+        
+        forms_config = self.config.get('forms_to_test', [])
+        
+        if not forms_config:
+            # Auto-detect forms
+            self._auto_detect_forms()
+        else:
+            for form_config in forms_config:
+                # Log CAPTCHA info
+                if form_config.get('has_captcha'):
+                    self.logger.info(f"Form on {form_config.get('path')} has CAPTCHA - using dry run mode")
+                self._test_form(form_config)
+        
+        return self.results
+    
+    def _auto_detect_forms(self):
+        """Auto-detect and check forms on critical pages."""
+        pages = self.config.get('critical_pages', ['/'])
+        
+        for page in pages:
+            url = self.get_full_url(page)
+            try:
+                response = requests.get(url, timeout=15,
+                    headers={'User-Agent': 'WordPress-Monitor/1.0'})
+                soup = BeautifulSoup(response.text, 'html.parser')
+                forms = soup.find_all('form')
+                
+                if forms:
+                    self.add_result('success', f'Found {len(forms)} form(s) on {page}',
+                                   url=url, details={'form_count': len(forms)})
+                    
+                    for i, form in enumerate(forms):
+                        self._analyze_form(form, url, i)
+                        
+            except Exception as e:
+                self.add_result('error', f'Failed to detect forms on {page}: {str(e)[:50]}',
+                               severity='medium', url=url)
+    
+    def _analyze_form(self, form, page_url: str, index: int):
+        """Analyze a form's structure."""
+        action = form.get('action', '')
+        method = form.get('method', 'post').upper()
+        form_id = form.get('id', f'form-{index}')
+        
+        # Find inputs
+        inputs = form.find_all(['input', 'textarea', 'select'])
+        required_fields = [inp for inp in inputs if inp.get('required')]
+        
+        # Check for common issues
+        if not action:
+            self.add_result('warning', f'Form {form_id} has no action attribute',
+                           severity='low', url=page_url)
+        
+        # Check for CAPTCHA
+        has_captcha = bool(form.find(class_=lambda x: x and 'captcha' in x.lower() if x else False))
+        if has_captcha:
+            self.logger.info(f"Form {form_id} has CAPTCHA protection")
+        
+        # Check for honeypot
+        honeypot = form.find(style=lambda x: x and 'display:none' in x if x else False)
+        
+        details = {
+            'form_id': form_id,
+            'method': method,
+            'action': action,
+            'field_count': len(inputs),
+            'required_fields': len(required_fields),
+            'has_captcha': has_captcha,
+            'has_honeypot': honeypot is not None
+        }
+        
+        self.add_result('success', f'Form {form_id} analyzed: {len(inputs)} fields',
+                       url=page_url, details=details)
+    
+    def _test_form(self, form_config: Dict[str, Any]):
+        """Test a specific form with Selenium."""
+        if not SELENIUM_AVAILABLE:
+            self.add_result('warning', 'Selenium not available for form testing',
+                           severity='low')
+            self._test_form_basic(form_config)
+            return
+        
+        path = form_config.get('path', '/')
+        url = self.get_full_url(path)
+        form_selector = form_config.get('form_selector')
+        fields = form_config.get('fields', [])
+        submit_selector = form_config.get('submit_selector')
+        success_indicator = form_config.get('success_indicator')
+        dry_run = form_config.get('dry_run', False)  # Don't actually submit if True
+        
+        driver = None
+        try:
+            options = Options()
+            options.add_argument('--headless=new')
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-dev-shm-usage')
+            options.add_argument('--disable-gpu')
+            options.add_argument('--window-size=1920,1080')
+            
+            self.logger.info(f"Starting Chrome for form test on {path}")
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=options)
+            driver.set_page_load_timeout(60)
+            
+            self.logger.info(f"Navigating to {url}")
+            driver.get(url)
+            time.sleep(3)  # Wait for page to fully load including JS
+            
+            # Scroll to form
+            if form_selector:
+                try:
+                    form = WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, form_selector))
+                    )
+                    driver.execute_script("arguments[0].scrollIntoView(true);", form)
+                    time.sleep(1)
+                except Exception as e:
+                    self.add_result('error', f'Form not found with selector "{form_selector}": {e}',
+                                   severity='high', url=url)
+                    return
+            else:
+                form = driver.find_element(By.TAG_NAME, 'form')
+            
+            self.logger.info(f"Found form, filling {len(fields)} fields")
+            filled_count = 0
+            
+            # Fill fields
+            for field in fields:
+                field_name = field.get('name')
+                field_selector = field.get('selector')  # Optional CSS selector
+                field_value = field.get('value')
+                field_type = field.get('type', 'text')
+                
+                try:
+                    # Find element by selector or name
+                    if field_selector:
+                        element = driver.find_element(By.CSS_SELECTOR, field_selector)
+                    elif field_name:
+                        element = driver.find_element(By.NAME, field_name)
+                    else:
+                        self.logger.warning(f"Field has no name or selector, skipping")
+                        continue
+                    
+                    # Scroll element into view
+                    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+                    time.sleep(0.3)
+                    
+                    # Handle different field types
+                    if field_type == 'checkbox':
+                        if field_value in ['on', 'true', True, '1']:
+                            if not element.is_selected():
+                                element.click()
+                        elif element.is_selected():
+                            element.click()
+                    elif field_type == 'radio':
+                        if not element.is_selected():
+                            element.click()
+                    elif field_type == 'select':
+                        from selenium.webdriver.support.ui import Select
+                        select = Select(element)
+                        select.select_by_visible_text(field_value)
+                    else:
+                        # text, email, tel, textarea, etc.
+                        element.clear()
+                        element.send_keys(field_value)
+                    
+                    filled_count += 1
+                    self.logger.info(f"Filled field: {field_name or field_selector}")
+                    
+                except Exception as e:
+                    self.add_result('warning', 
+                        f'Could not fill field {field_name or field_selector}: {str(e)[:50]}',
+                        severity='medium', url=url)
+            
+            self.logger.info(f"Filled {filled_count}/{len(fields)} fields")
+            
+            # Dry run - don't submit
+            if dry_run:
+                self.add_result('success', f'Form fields filled on {path} (dry run)',
+                               url=url, details={'fields_filled': filled_count})
+                return
+            
+            # Submit form
+            time.sleep(1)
+            if submit_selector:
+                submit_btn = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, submit_selector))
+                )
+            else:
+                submit_btn = form.find_element(By.CSS_SELECTOR, 
+                    "input[type='submit'], button[type='submit'], .submit-button")
+            
+            self.logger.info("Clicking submit button")
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", submit_btn)
+            time.sleep(0.5)
+            submit_btn.click()
+            time.sleep(5)  # Wait for form submission and response
+            
+            # Check for success
+            if success_indicator:
+                try:
+                    WebDriverWait(driver, 15).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, success_indicator))
+                    )
+                    self.add_result('success', f'Form submission successful on {path}',
+                                   url=url, details={'fields_filled': filled_count})
+                except:
+                    # Take screenshot on failure
+                    screenshot_path = f"screenshots/form_error_{path.replace('/', '_')}.png"
+                    try:
+                        driver.save_screenshot(screenshot_path)
+                        self.logger.info(f"Screenshot saved: {screenshot_path}")
+                    except:
+                        pass
+                    
+                    # Check for error messages
+                    page_source = driver.page_source.lower()
+                    if 'error' in page_source or 'invalid' in page_source:
+                        self.add_result('error', f'Form submission failed on {path} - validation error',
+                                       severity='high', url=url)
+                    else:
+                        self.add_result('warning', f'Form success indicator not found on {path}',
+                                       severity='medium', url=url)
+            else:
+                self.add_result('success', f'Form submitted on {path} (no success check)',
+                               url=url, details={'fields_filled': filled_count})
+            
+        except Exception as e:
+            self.add_result('error', f'Form test failed on {path}: {str(e)[:100]}',
+                           severity='high', url=url)
+        finally:
+            if driver:
+                driver.quit()
+    
+    def _test_form_basic(self, form_config: Dict[str, Any]):
+        """Basic form testing without Selenium."""
+        path = form_config.get('path', '/')
+        url = self.get_full_url(path)
+        
+        try:
+            response = requests.get(url, timeout=15)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            form_selector = form_config.get('form_selector')
+            if form_selector:
+                form = soup.select_one(form_selector)
+            else:
+                form = soup.find('form')
+            
+            if form:
+                self.add_result('success', f'Form found on {path}',
+                               url=url, details={'form_found': True})
+            else:
+                self.add_result('warning', f'Form not found on {path}',
+                               severity='medium', url=url)
+                
+        except Exception as e:
+            self.add_result('error', f'Form check failed: {str(e)[:50]}',
+                           severity='medium', url=url)

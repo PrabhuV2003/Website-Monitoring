@@ -1,0 +1,68 @@
+# WordPress Monitor - Requirements
+# ================================
+
+# Core HTTP & Web Libraries
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+html5lib>=1.1
+
+# Browser Automation
+selenium>=4.15.0
+webdriver-manager>=4.0.0
+playwright>=1.40.0
+
+# Async Support
+aiohttp>=3.9.0
+asyncio-throttle>=1.0.2
+
+# Configuration
+PyYAML>=6.0.1
+python-dotenv>=1.0.0
+
+# Database
+SQLAlchemy>=2.0.0
+alembic>=1.12.0
+
+# Scheduling
+APScheduler>=3.10.0
+python-crontab>=3.0.0
+
+# Reporting
+Jinja2>=3.1.0
+weasyprint>=60.0
+markdown>=3.5.0
+
+# Email
+secure-smtplib>=0.1.1
+
+# Monitoring & Metrics
+prometheus-client>=0.19.0
+
+# Dashboard (Flask)
+Flask>=3.0.0
+Flask-SocketIO>=5.3.0
+Flask-Login>=0.6.3
+python-socketio>=5.10.0
+
+# Image Processing (for screenshots)
+Pillow>=10.0.0
+imagehash>=4.3.1
+
+# CLI
+click>=8.1.0
+rich>=13.7.0
+tqdm>=4.66.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# Security
+cryptography>=41.0.0
+
+# Utilities
+python-dateutil>=2.8.0
+validators>=0.22.0
+urllib3>=2.1.0

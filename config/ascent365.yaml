@@ -1,0 +1,175 @@
+# WordPress Monitor Configuration - Ascent Innovation
+# ===================================================
+
+# Target Website Configuration
+website:
+  url: "https://www.ascent365.com"
+  name: "Ascent Innovation"
+  
+# Authentication (if needed for wp-admin checks)
+wordpress_auth:
+  username: ""  # Leave empty if not using authenticated checks
+  password: ""  # Use environment variable WP_MONITOR_PASSWORD instead
+  
+# Monitoring Schedule
+schedule:
+  check_interval: "daily"  # daily, hourly, or custom cron expression
+  check_time: "13:55"      # 6:00 AM daily (24-hour format)
+  timezone: "Asia/Kolkata"
+
+# Alert Configuration
+alerts:
+  email:
+    enabled: true
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    # ASCENT365 EMAIL ACCOUNT - UPDATE THESE VALUES
+    smtp_username: "norepliesascent365@gmail.com"  # UPDATE: Your Gmail for Ascent365
+    smtp_password: "hkcn ujac suli surz"       # UPDATE: App Password from Gmail
+    from_email: "norepliesascent365@gmail.com"     # UPDATE: Same as smtp_username
+    recipients:
+      - "prabhuofficial2003@gmail.com"  # Client email for Ascent365
+    
+  slack:
+    enabled: false
+    webhook_url: ""  # Use environment variable SLACK_WEBHOOK_URL
+    channel: "#website-alerts"
+    
+  discord:
+    enabled: false
+    webhook_url: ""  # Use environment variable DISCORD_WEBHOOK_URL
+
+# Thresholds
+thresholds:
+  response_time_warning: 2000   # milliseconds
+  response_time_critical: 3000  # milliseconds
+  ssl_expiry_warning: 30        # days before expiry
+  ssl_expiry_critical: 7        # days before expiry
+  page_load_warning: 3000       # milliseconds
+  page_load_critical: 5000      # milliseconds
+  uptime_warning: 99.0          # percentage
+  uptime_critical: 95.0         # percentage
+
+# Critical Pages to Monitor
+critical_pages:
+  - "/"
+
+# Forms to Test (if any - can be added later)
+forms: []
+#  - name: "Contact Form"
+#    url: "/contact/"
+#    fields:
+#      name: "Test User"
+#      email: "test@example.com"
+#      message: "Test message"
+#    submit_button: "button[type='submit']"
+
+# Uptime Monitor Settings
+uptime_monitor:
+  enabled: true
+  check_interval: 300  # seconds (5 minutes for continuous monitoring)
+  timeout: 30          # seconds
+  verify_ssl: true
+  follow_redirects: true
+
+# Link Checker Settings  
+link_checker:
+  enabled: true
+  max_links_per_page: 0  # Limit links checked per page (0 = unlimited)
+  timeout: 10              # seconds per link
+  check_external: true     # Check external links too
+  ignore_patterns:
+    - "linkedin.com"
+    - "facebook.com"
+    - "twitter.com"
+    - "instagram.com"
+
+# Image Checker Settings
+image_checker:
+  enabled: true
+  max_images_per_page: 0  # Limit images per page (0 = unlimited)
+  slow_threshold_ms: 3000  # Consider image slow if > 3 seconds
+  check_alt_text: true     # Check for missing alt attributes
+  timeout: 10              # seconds per image
+
+# Video Checker Settings
+video_checker:
+  enabled: true
+  check_youtube: true
+  check_vimeo: true
+  check_html5: true
+  timeout: 15  # seconds
+
+# WordPress-Specific Checks
+wordpress_checks:
+  enabled: true
+  check_version: true
+  check_plugins: true
+  check_themes: true
+  check_updates: true
+  security_scan: true
+
+# Performance Monitor
+performance_monitor:
+  enabled: true
+  lighthouse_enabled: false  # Requires Node.js
+  pagespeed_enabled: false   # Requires API key
+  metrics:
+    - "first_contentful_paint"
+    - "largest_contentful_paint"
+    - "time_to_interactive"
+    - "total_blocking_time"
+    - "cumulative_layout_shift"
+
+# Content Checker
+content_checker:
+  enabled: true
+  check_spell: false  # Basic spell checking
+  check_broken_media: true
+  check_mixed_content: true  # HTTP content on HTTPS pages
+
+# SEO Checker
+seo_checker:
+  enabled: true
+  check_meta_tags: true
+  check_headings: true
+  check_canonical: true
+  check_robots_txt: true
+  check_sitemap: true
+  check_structured_data: true
+
+# Report Settings
+reports:
+  output_dir: "reports/ascent365"  # Separate folder for Ascent365 reports
+  format: "html"  # html, json, or both
+  pdf_enabled: true
+  include_screenshots: false  # Requires Playwright
+  cleanup_after_days: 30  # Auto-delete old reports
+
+# Database Settings
+database:
+  path: "data/monitor_ascent365.db"  # Separate database for Ascent365
+  backup_enabled: true
+  backup_interval: "weekly"
+
+# Logging Configuration
+logging:
+  file: "logs/ascent365.log"  # Separate log file for Ascent365
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  max_size_mb: 10
+  backup_count: 5
+
+# Dashboard Settings (optional)
+dashboard:
+  enabled: false
+  host: "127.0.0.1"
+  port: 5001  # Different port from Website 1
+  secret_key: ""  # Use environment variable DASHBOARD_SECRET_KEY
+
+# Advanced Settings
+advanced:
+  max_workers: 5  # Parallel checks
+  retry_failed: 3  # Retry failed checks
+  user_agent: "WordPress-Monitor/1.0 (Ascent365)"
+  playwright_enabled: false  # Use Playwright for JS-heavy sites
+  headless: true  # Run browser in headless mode
