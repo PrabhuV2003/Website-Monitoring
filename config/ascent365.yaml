@@ -258,11 +258,6 @@ performance_monitor:
     - "total_blocking_time"
     - "cumulative_layout_shift"
 
-# Content Integrity - Track content changes
-content_integrity:
-  enable_change_detection: true    # Enabled - tracks content changes
-  baseline_screenshots: true       # Enabled - saves baseline screenshots
-  hash_critical_content: true      # Enabled - tracks content via hash values
 
 # Content Checker
 content_checker:

@@ -314,6 +314,63 @@ playwright install-deps chromium
 
 ---
 
+## **Step 2.6.5: Install Chrome for Form Testing**
+
+**This allows the monitor to fill and submit forms using a real browser on the VPS.**
+
+### **Option A: Quick Script (Recommended)**
+
+```bash
+# Run the setup script (as root)
+sudo bash setup_chrome_vps.sh
+```
+
+### **Option B: Manual Install**
+
+```bash
+# Install dependencies
+sudo apt update
+sudo apt install -y wget curl gnupg2
+
+# Add Google Chrome repository
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+
+# Install Chrome
+sudo apt update
+sudo apt install -y google-chrome-stable
+
+# Verify it works
+google-chrome --version
+```
+
+### **Verify Chrome + Selenium:**
+
+```bash
+# Activate your venv first
+source ~/wordpress-monitor/venv/bin/activate
+
+# Quick test
+python3 -c "
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+opts = Options()
+opts.add_argument('--headless=new')
+opts.add_argument('--no-sandbox')
+opts.add_argument('--disable-dev-shm-usage')
+driver = webdriver.Chrome(options=opts)
+driver.get('https://www.google.com')
+print(f'✅ Chrome works! Title: {driver.title}')
+driver.quit()
+"
+```
+
+**If you see `✅ Chrome works!` → Form testing will work!** ✅
+
+⚠️ **Without Chrome:** Forms are still checked (page loads, fields exist) but cannot be filled/submitted.
+
+---
+
 ## **Step 2.7: Test It Works**
 
 ```bash

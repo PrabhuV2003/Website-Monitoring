@@ -279,12 +279,7 @@ performance:
   check_console_errors: true
   capture_screenshots: true
   
-# Content Integrity
-content_integrity:
-  enable_change_detection: true    # Enabled - tracks content changes
-  baseline_screenshots: true       # Enabled - saves baseline screenshots
-  hash_critical_content: true      # Enabled - tracks content via hash values
-  
+
 # SEO Checks
 seo_checks:
   check_meta_tags: true

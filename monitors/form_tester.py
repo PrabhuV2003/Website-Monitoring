@@ -249,34 +249,86 @@ class FormTester(BaseMonitor):
                                url=url, details={'fields_filled': filled_count})
             
         except Exception as e:
-            self.add_result('error', f'Form test failed on {path}: {str(e)[:100]}',
-                           severity='high', url=url)
+            error_msg = str(e).lower()
+            # If Chrome/browser is not available, fall back to basic HTTP test
+            if 'chrome' in error_msg or 'binary' in error_msg or 'webdriver' in error_msg or 'chromedriver' in error_msg:
+                self.logger.warning(f"Chrome not available for form test on {path}, falling back to basic HTTP check")
+                self._test_form_basic(form_config)
+            else:
+                self.add_result('error', f'Form test failed on {path}: {str(e)[:100]}',
+                               severity='high', url=url)
         finally:
             if driver:
                 driver.quit()
     
     def _test_form_basic(self, form_config: Dict[str, Any]):
-        """Basic form testing without Selenium."""
+        """Basic form testing without Selenium - checks form presence and field accessibility."""
         path = form_config.get('path', '/')
         url = self.get_full_url(path)
+        form_name = form_config.get('name', path)
         
         try:
-            response = requests.get(url, timeout=15)
+            response = requests.get(url, timeout=15,
+                headers={'User-Agent': 'WordPress-Monitor/1.0'})
+            
+            if response.status_code != 200:
+                self.add_result('error', f'Form page {form_name} returned HTTP {response.status_code}',
+                               severity='high', url=url)
+                return
+            
             soup = BeautifulSoup(response.text, 'html.parser')
             
+            # Find form
             form_selector = form_config.get('form_selector')
             if form_selector:
                 form = soup.select_one(form_selector)
             else:
                 form = soup.find('form')
             
-            if form:
-                self.add_result('success', f'Form found on {path}',
-                               url=url, details={'form_found': True})
-            else:
-                self.add_result('warning', f'Form not found on {path}',
+            if not form:
+                self.add_result('warning', f'Form not found on {form_name} ({path})',
                                severity='medium', url=url)
+                return
+            
+            # Check expected fields
+            fields = form_config.get('fields', [])
+            fields_found = 0
+            fields_missing = []
+            
+            for field in fields:
+                selector = field.get('selector')
+                if selector:
+                    # Search in entire page since some forms use JS to render fields
+                    element = soup.select_one(selector)
+                    if element:
+                        fields_found += 1
+                    else:
+                        fields_missing.append(selector)
+            
+            # Check submit button
+            submit_selector = form_config.get('submit_selector')
+            submit_found = False
+            if submit_selector:
+                submit_found = soup.select_one(submit_selector) is not None
+            
+            details = {
+                'form_found': True,
+                'fields_expected': len(fields),
+                'fields_found': fields_found,
+                'fields_missing': fields_missing[:5] if fields_missing else [],
+                'submit_button_found': submit_found,
+                'mode': 'basic_http (Chrome not available)'
+            }
+            
+            if fields_missing:
+                self.add_result('warning', 
+                    f'Form {form_name}: found but {len(fields_missing)} field(s) not detected in HTML',
+                    severity='low', url=url, details=details)
+            else:
+                self.add_result('success', 
+                    f'Form {form_name}: present with {fields_found}/{len(fields)} fields verified',
+                    url=url, details=details)
                 
         except Exception as e:
-            self.add_result('error', f'Form check failed: {str(e)[:50]}',
+            self.add_result('error', f'Form check failed for {form_name}: {str(e)[:50]}',
                            severity='medium', url=url)
