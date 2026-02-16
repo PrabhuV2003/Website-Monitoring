@@ -28,9 +28,9 @@ alerts:
     # NEVASTECH EMAIL ACCOUNT - UPDATE THESE VALUES
     smtp_username: "nevasai2025@gmail.com"  # UPDATE: Your Gmail for Nevastech
     smtp_password: "bztt zlmc dtfb egjj"       # UPDATE: App Password from Gmail
-    from_email: "nevastech.monitor@gmail.com"     # UPDATE: Same as smtp_username
+    from_email: "nevasai2025@gmail.com"     # UPDATE: Same as smtp_username
     recipients:
-      - "nevasai2025@gmail.com"  # Add more client emails here as needed
+      - "john@nevastech.com"  # Add more client emails here as needed
       - "prabhu@nevastech.com"  # Add more client emails here as needed
     
   slack:

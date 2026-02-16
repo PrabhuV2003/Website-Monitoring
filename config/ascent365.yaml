@@ -28,7 +28,8 @@ alerts:
     smtp_password: "hkcn ujac suli surz"       # UPDATE: App Password from Gmail
     from_email: "norepliesascent365@gmail.com"     # UPDATE: Same as smtp_username
     recipients:
-      - "prabhuofficial2003@gmail.com"  # Client email for Ascent365
+      - "john@nevastech.com"  # Client email for Ascent365
+      - "prabhu@nevastech.com"  # Client email for Ascent365
     
   slack:
     enabled: false
