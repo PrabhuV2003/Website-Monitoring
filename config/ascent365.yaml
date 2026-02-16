@@ -14,7 +14,7 @@ wordpress_auth:
 # Monitoring Schedule
 schedule:
   check_interval: "daily"  # daily, hourly, or custom cron expression
-  check_time: "13:55"      # 6:00 AM daily (24-hour format)
+  check_time: "11:00"      # 6:00 AM daily (24-hour format)
   timezone: "Asia/Kolkata"
 
 # Alert Configuration
@@ -53,16 +53,146 @@ thresholds:
 # Critical Pages to Monitor
 critical_pages:
   - "/"
+  - "/services/enterprise-modernization/"
+  - "/services/microsoft-dynamics-365-implementation/"
+  - "/services/d365-migration-planning-readiness/"
+  - "/services/d365-implementation-rescue/"
+  - "/services/microsoft-dynamics-365-support/dynamics-365-support-partner/"
+  - "/services/microsoft-dynamics-365-upgrade/"
+  - "/services/microsoft-dynamics-365-support/ax-support/"
+  - "/services/dynamics-365-audit-assessment/"
+  - "/services/power-platform-enhancements/"        
+  - "/services/d365-training/"
+  - "/services/microsoft-dynamics-365-support/business-central-support/"
+  - "/services/microsoft-dynamics-365-support/dynamics-gp-nav-support/"
+  - "/solutions/microsoft-power-bi/"
+  - "/solutions/microsoft-power-automate/"
+  - "/solutions/microsoft-dynamics-365-supply-chain/"
+  - "/solutions/microsoft-dynamics-365-business-central/"
+  - "/solutions/cybersecurity-solutions/"
+  - "/solutions/customer-engagement/"
+  - "/solutions/microsoft-dynamics-ax/"
+  - "/solutions/microsoft-dynamics-nav-gp/"
+  - "/solutions/application-modernization/"
+  - "/solutions/microsoft-power-platform/"
+  - "/solutions/microsoft-power-pages/"
+  - "/solutions/microsoft-power-apps/"
+  - "/solutions/ai-shipment365/"
+  - "/solutions/microsoft-dynamics-365-finance/"
+  - "/solutions/ai-contractflow-365/"
+  - "/industries/chemical-pharmaceutical/"
+  - "/industries/food-manufacturing/"
+  - "/industries/consumer-packaged-goods-cpg/"
+  - "/industries/chemical-manufacturing-and-processing/"
+  - "/industries/warehouse-and-distribution/"
+  - "/industries/steel-metal-fabrication/"
+  - "/industries/energy-utilities/"
+  - "/industries/recycling-sustainability/"
+  - "/industries/manufacturing/"
+  - "/industries/industrial-equipment/"
+  - "/company/about-us/"
+  - "/company/careers/"
+  - "/company/careers/sales-lead/"
+  - "/company/careers/dynamics-365-finance-operations-development-lead/"
+  - "/company/careers/dynamics-functional-architect/"
+  - "/company/careers/microsoft-dynamics-365-development-specialist/"
+  - "/company/careers/sales-marketing-associate/"
+  - "/company/careers/marketing-executive/"
+  - "/company/careers/regional-sales-executive/"
+  - "/dynamics-365-business-central/"
+  - "/dynamics-gp-to-365-business-central-migration/"
+  - "/blogs/"
+  - "/blogs/replaceable-attributes-in-d365-operations"
+  - "/blogs/all-in-one-deployable-package-adp"
+  - "/blogs/level-up-faster-the-secret-of-deliberate-exposure"
+  - "/blogs/7-steps-to-unlocking-millions-in-gross-profit"
+  - "/blogs/winning-with-ai-build-the-bi-race-car-before-you-turbocharge-it-with-ai"
+  - "/blogs/net-customer-and-vendor-balances"
+  - "/blogs/ai-hype-vs-reality"
+  - "/blogs/top-skills-for-2025"
+  - "/blogs/procurement-goals-we-dont-need-any-toner"
+  - "/blogs/committing-to-accurate-barcodes-because-royal-doulton-looks-weird-next-to-a-sippy-cup"
+  - "/blogs/ai-powered-predictive-pricing-a-game-changer"
+  - "/blogs/consignment-inventory-or-vendor-owned-inventory"
+  - "/blogs/what-is-application-modernization"
+  - "/blogs/automate-work-while-on-the-go"
+  - "/blogs/everything-you-need-to-know-about-a-dynamics-gp-upgrade"
+  - "/blogs/upgrading-to-microsoft-dynamics-gp"
+  - "/blogs/migrating-from-dynamics-gp-to-dynamics-365-business-central-your-gateway-to-a-smarter-erp-future"
+  - "/blogs/migrating-from-dynamics-gp-to-business-central-is-your-business-ready-for-the-leap"
+  - "/blogs/beyond-go-live-empowering-teams-to-unlock-d365s-full-value"
+  - "/blogs/planning-optimization-in-d365-the-nerve-center-of-your-supply-chain"
+  - "/blogs/power-bi-driving-your-business-with-a-forward-looking-view"
+  - "/blogs/streamlining-supplier-management-with-power-pages"
+  - "/blogs/power-platform-the-toolbox-that-maximizes-your-d365-investment"
+  - "/blogs/power-platform-overview"
+  - "/blogs/power-platform-not-an-afterthought-for-d365-planning/"
+  - "/blogs/unlock-business-impact-now-how-power-platform-accelerates-agile-roi-for-ax-users"
+  - "/blogs/unlocking-business-agility-how-the-power-platform-empowers-business-users"
+  - "/blogs/d365-supply-chain-management-because-guesswork-is-not-a-strategy"
+  - "/blogs/what-is-safety-stock"
+  - "/blogs/d365-business-central-because-guesswork-is-not-a-strategy"
+  - "/blogs/microsoft-cloud-for-manufacturing"
+  - "/blogs/from-cozy-coupe-to-the-real-deal-why-training-is-the-key-to-success"
+  - "/blogs/if-you-sense-problems-in-your-d365-implementation-you-probably-have-them"
+  - "/blogs/importing-custom-data-in-d365-data-entities"
+  - "/blogs/microsoft-dynamics-365-finance-operations-deployment-options"
+  - "/blogs/microsoft-dynamics-365-for-finance-and-operations-begin-one-version-era"
+  - "/blogs/getting-d365-right-the-first-time-why-fundamentals-matter"
+  - "/blogs/why-upgrade-from-ax-to-d365"
+  - "/blogs/business-insights-for-employee-evaluations-or-why-no-one-cares-what-you-think-karen"
+  - "/blogs/end-of-mainstream-support-for-dynamics-ax-2009-and-ax-2012"
+  - "/blogs/what-is-abc-analysis"
+  - "/blogs/cross-functional-workflow-non-d365-applications-need-to-keep-up-with-d365"
+  - "/blogs/why-upgrade-from-dynamics-ax-to-dynamics-365-finance-and-operations"
+  - "/blogs/what-to-look-for-in-an-ax-support-partner"
+  - "/blogs/planning-your-dynamics-gp-upgrade-what-to-expect-and-how-to-prepare"
+  - "/blogs/migrate-ews-apps-to-microsoft-graph-for-exchange-online-in-d365-finance-and-operations"
+  - "/privacy-policy/"
+  - "/terms-conditions/"
+  - "/thank-you/"
+  - "/self-assessment/"
+  - "/appointment-form/"
+  - "/microsoft-solutions-for-state-local-government/"
 
 # Forms to Test (if any - can be added later)
-forms: []
-#  - name: "Contact Form"
-#    url: "/contact/"
-#    fields:
-#      name: "Test User"
-#      email: "test@example.com"
-#      message: "Test message"
-#    submit_button: "button[type='submit']"
+forms:
+  - name: "Test Form"
+    url: "/test-appointment-form"
+
+    fields:
+      - selector: "input#form-field-name"
+        value: "John"
+        type: "text"
+
+      - selector: "input#form-field-field_9d50e31"
+        value: "Solomon"
+        type: "text"
+
+      - selector: "input#form-field-email"
+        value: "john@nevastech.com"
+        type: "email"
+
+      - selector: "input#form-field-field_e1611bb"
+        value: "9876543210"
+        type: "tel"
+
+      - selector: "input#form-field-field_cf54f16"
+        value: "Automating Website Testing - Nevas Technologies"
+        type: "text"
+
+      - selector: "textarea#form-field-message"
+        value: "Automated monitoring test - please ignore."
+        type: "textarea"
+
+      - selector: "input#form-field-field_a26c714"
+        value: "on"
+        type: "checkbox"
+
+    submit_selector: "button[type='submit'].elementor-button"
+    success_indicator: ".elementor-message-success"
+
+  
 
 # Uptime Monitor Settings
 uptime_monitor:
@@ -78,11 +208,17 @@ link_checker:
   max_links_per_page: 0  # Limit links checked per page (0 = unlimited)
   timeout: 10              # seconds per link
   check_external: true     # Check external links too
-  ignore_patterns:
-    - "linkedin.com"
-    - "facebook.com"
-    - "twitter.com"
-    - "instagram.com"
+  ignore_patterns:                # Regex patterns to ignore
+    - ".*\\.pdf$"                  # Skip PDF files
+    - ".*\\?.*"                    # Skip URLs with query parameters
+    - ".*/wp-admin/.*"             # Skip WordPress admin
+    - ".*twitter\\.com.*"          # Skip Twitter links
+    - ".*x\\.com.*"                # Skip X (Twitter) links
+    - ".*linkedin\\.com.*"         # Skip LinkedIn links
+    - ".*facebook\\.com.*"         # Skip Facebook links
+    - ".*instagram\\.com.*"        # Skip Instagram links
+    - ".*youtube\\.com.*"          # Skip YouTube links
+    - ".*youtu\\.be.*"             # Skip YouTube short links
 
 # Image Checker Settings
 image_checker:
@@ -120,6 +256,12 @@ performance_monitor:
     - "time_to_interactive"
     - "total_blocking_time"
     - "cumulative_layout_shift"
+
+# Content Integrity - Track content changes
+content_integrity:
+  enable_change_detection: true    # Enabled - tracks content changes
+  baseline_screenshots: true       # Enabled - saves baseline screenshots
+  hash_critical_content: true      # Enabled - tracks content via hash values
 
 # Content Checker
 content_checker:

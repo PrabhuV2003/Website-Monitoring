@@ -81,9 +81,15 @@ class ContentChecker(BaseMonitor):
                     stored_hash = f.read().strip()
                 
                 if stored_hash != content_hash:
+                    # Content changed - alert AND update baseline
                     self.add_result('warning', f'Content changed on {page_path}',
                                    severity='medium', url=url,
                                    details={'old_hash': stored_hash[:8], 'new_hash': content_hash[:8]})
+                    
+                    # AUTO-UPDATE: Make this the new baseline
+                    with open(baseline_file, 'w') as f:
+                        f.write(content_hash)
+                    self.logger.info(f"Baseline auto-updated for {page_path}")
                 else:
                     self.add_result('success', f'Content unchanged on {page_path}',
                                    url=url)

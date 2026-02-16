@@ -12,7 +12,7 @@ Write-Host ""
 Write-Host "[1] Website 1: Nevas Technologies" -ForegroundColor Green
 Write-Host "    URL: https://www.nevastech.com" -ForegroundColor Gray
 Write-Host "    Email: renderthaniks@gmail.com, prabhu@nevastech.com" -ForegroundColor Gray
-Write-Host "    Schedule: Daily at 4:30 PM" -ForegroundColor Gray
+Write-Host "    Schedule: Daily at 6:00 AM" -ForegroundColor Gray
 Write-Host ""
 
 # Website 2: Ascent365
@@ -42,7 +42,7 @@ Write-Host ""
 # Start Nevastech scheduler in new window
 Write-Host "Starting Nevastech scheduler..." -ForegroundColor Cyan
 Start-Process powershell -ArgumentList "-NoExit", "-Command", `
-    "cd '$PWD'; Write-Host ''; Write-Host '========================================' -ForegroundColor Magenta; Write-Host '  NEVASTECH MONITOR' -ForegroundColor Magenta; Write-Host '  https://www.nevastech.com' -ForegroundColor Magenta; Write-Host '  Schedule: Daily at 4:30 PM' -ForegroundColor Magenta; Write-Host '========================================' -ForegroundColor Magenta; Write-Host ''; python scheduler_nevastech.py"
+    "cd '$PWD'; Write-Host ''; Write-Host '========================================' -ForegroundColor Magenta; Write-Host '  NEVASTECH MONITOR' -ForegroundColor Magenta; Write-Host '  https://www.nevastech.com' -ForegroundColor Magenta; Write-Host '  Schedule: Daily at 6:00 AM' -ForegroundColor Magenta; Write-Host '========================================' -ForegroundColor Magenta; Write-Host ''; python scheduler_nevastech.py"
 
 # Wait a moment
 Start-Sleep -Seconds 2
@@ -59,7 +59,7 @@ Write-Host ""
 Write-Host "[OK] Both schedulers started successfully!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Summary:" -ForegroundColor Yellow
-Write-Host "  - Nevastech: Runs daily at 4:30 PM" -ForegroundColor White
+Write-Host "  - Nevastech: Runs daily at 6:00 AM" -ForegroundColor White
 Write-Host "  - Ascent365: Runs daily at 6:00 AM" -ForegroundColor White
 Write-Host ""
 Write-Host "TIP: Each scheduler has its own window" -ForegroundColor Cyan

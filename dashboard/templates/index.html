@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordPress Monitor Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --accent-blue: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-yellow: #eab308;
+            --accent-purple: #a855f7;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+        }
+
+        .status-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .log-container {
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+        }
+
+        .log-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .log-container::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        .log-container::-webkit-scrollbar-thumb {
+            background: var(--accent-blue);
+            border-radius: 4px;
+        }
+
+        .log-line {
+            padding: 4px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .log-INFO {
+            color: #22c55e;
+        }
+
+        .log-WARNING {
+            color: #eab308;
+        }
+
+        .log-ERROR {
+            color: #ef4444;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .mode-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .mode-card.selected {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .report-row:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            display: none;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-tertiary);
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        input:checked+.toggle-slider {
+            background: var(--accent-blue);
+        }
+
+        input:checked+.toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Email Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 520px;
+            width: 90%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-pdf {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            transition: all 0.3s ease;
+        }
+
+        .btn-pdf:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-email {
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            transition: all 0.3s ease;
+        }
+
+        .btn-email:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.3);
+        }
+
+        .email-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 12px;
+            color: #93c5fd;
+        }
+
+        .email-tag .remove {
+            cursor: pointer;
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <a href="https://www.ascent365.com/" target="_blank">
+                    <img src="https://www.ascent365.com/wp-content/uploads/2025/03/ascent-innovations-logo.svg"
+                        alt="ascent365 Logo" class="w-48 mb-4">
+                </a>
+                <!-- <h1
+                    class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                    Website Monitor System
+                </h1> -->
+                <p class="text-slate-400 mt-1">Real-time website monitoring dashboard</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div id="statusIndicator" class="flex items-center gap-2 px-4 py-2 glass-card">
+                    <div class="w-3 h-3 rounded-full bg-green-500 status-pulse"></div>
+                    <span class="text-sm">Connected</span>
+                </div>
+                <span class="text-slate-400 text-sm" id="currentTime"></span>
+            </div>
+        </header>
+
+        <!-- Website URL Configuration -->
+        <section class="glass-card p-6 mb-6 fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold">🌐 Website Configuration</h2>
+                <button onclick="saveUrl()" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+                    Save URL
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-slate-400 text-sm mb-2">Website URL</label>
+                    <input type="text" id="websiteUrl" value="{{ website_url }}"
+                        class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
+                        placeholder="https://example.com">
+                </div>
+                <div>
+                    <label class="block text-slate-400 text-sm mb-2">Pages to Check (comma separated)</label>
+                    <input type="text" id="pagesToCheck"
+                        value="{{ critical_pages | join(', ') if critical_pages else '/' }}"
+                        class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none"
+                        placeholder="/,/about/,/contact/">
+                </div>
+            </div>
+        </section>
+
+        <!-- Check Mode Selection -->
+        <section class="glass-card p-6 mb-6 fade-in">
+            <h2 class="text-xl font-semibold mb-4">🚀 Check Mode</h2>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                <div class="mode-card glass-card p-4 text-center selected" data-mode="quick"
+                    onclick="selectMode('quick')">
+                    <div class="text-3xl mb-2">⚡</div>
+                    <h3 class="font-semibold">Quick</h3>
+                    <p class="text-xs text-slate-400 mt-1">Uptime check only</p>
+                </div>
+                <div class="mode-card glass-card p-4 text-center" data-mode="fast" onclick="selectMode('fast')">
+                    <div class="text-3xl mb-2">🔗</div>
+                    <h3 class="font-semibold">Links</h3>
+                    <p class="text-xs text-slate-400 mt-1">Check all links</p>
+                </div>
+                <div class="mode-card glass-card p-4 text-center" data-mode="images" onclick="selectMode('images')">
+                    <div class="text-3xl mb-2">🖼️</div>
+                    <h3 class="font-semibold">Images</h3>
+                    <p class="text-xs text-slate-400 mt-1">Check all images</p>
+                </div>
+                <div class="mode-card glass-card p-4 text-center" data-mode="videos" onclick="selectMode('videos')">
+                    <div class="text-3xl mb-2">🎬</div>
+                    <h3 class="font-semibold">Videos</h3>
+                    <p class="text-xs text-slate-400 mt-1">Check embedded videos</p>
+                </div>
+                <div class="mode-card glass-card p-4 text-center" data-mode="full" onclick="selectMode('full')">
+                    <div class="text-3xl mb-2">🔍</div>
+                    <h3 class="font-semibold">Full</h3>
+                    <p class="text-xs text-slate-400 mt-1">Complete analysis</p>
+                </div>
+            </div>
+
+            <!-- Options -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label class="block text-slate-400 text-sm mb-2">Item Limit (0 = unlimited)</label>
+                    <input type="number" id="itemLimit" value="0" min="0" max="1000"
+                        class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-400 text-sm mb-2">Use Browser</label>
+                    <div class="flex items-center gap-4 mt-3">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="useBrowser">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="text-sm text-slate-400">Enable Selenium browser</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-slate-400 text-sm mb-2">Browser Mode</label>
+                    <div class="flex items-center gap-4 mt-3">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="browserVisible">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="text-sm text-slate-400">Show browser window</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Run Button -->
+            <div class="flex gap-4">
+                <button id="runCheckBtn" onclick="runCheck()"
+                    class="btn-primary px-8 py-3 rounded-lg font-semibold text-lg flex items-center gap-2">
+                    <span id="runBtnIcon">▶️</span>
+                    <span id="runBtnText">Run Check</span>
+                </button>
+                <button id="stopCheckBtn" onclick="stopCheck()"
+                    class="btn-secondary px-6 py-3 rounded-lg font-medium hidden">
+                    ⏹️ Stop
+                </button>
+            </div>
+        </section>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Real-time Logs -->
+            <section class="glass-card p-6 fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">📋 Live Logs</h2>
+                    <button onclick="clearLogs()" class="text-sm text-slate-400 hover:text-white">Clear</button>
+                </div>
+                <div id="logContainer" class="log-container bg-slate-900 rounded-lg p-4">
+                    <div class="text-slate-500 text-center py-8">
+                        Logs will appear here when you run a check...
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Summary -->
+            <section class="glass-card p-6 fade-in">
+                <h2 class="text-xl font-semibold mb-4">📊 Results</h2>
+                <div id="resultsContainer">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="bg-red-500/20 border border-red-500/30 rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-red-400" id="criticalCount">0</div>
+                            <div class="text-sm text-slate-400">Critical</div>
+                        </div>
+                        <div class="bg-orange-500/20 border border-orange-500/30 rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-orange-400" id="highCount">0</div>
+                            <div class="text-sm text-slate-400">High</div>
+                        </div>
+                        <div class="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-yellow-400" id="mediumCount">0</div>
+                            <div class="text-sm text-slate-400">Medium</div>
+                        </div>
+                        <div class="bg-green-500/20 border border-green-500/30 rounded-lg p-4 text-center">
+                            <div class="text-3xl font-bold text-green-400" id="lowCount">0</div>
+                            <div class="text-sm text-slate-400">Low</div>
+                        </div>
+                    </div>
+                    <div id="resultDetails" class="bg-slate-800 rounded-lg p-4">
+                        <div class="text-slate-500 text-center py-4">
+                            Run a check to see results...
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Reports Section -->
+        <section class="glass-card p-6 fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">📁 Reports</h2>
+                <button onclick="loadReports()" class="text-sm text-blue-400 hover:text-blue-300">🔄 Refresh</button>
+            </div>
+            <div id="reportsContainer" class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-left text-slate-400 text-sm border-b border-slate-700">
+                            <th class="pb-3 pr-4">Report</th>
+                            <th class="pb-3 pr-4">Type</th>
+                            <th class="pb-3 pr-4">Created</th>
+                            <th class="pb-3 pr-4">Size</th>
+                            <th class="pb-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTableBody">
+                        <tr>
+                            <td colspan="5" class="py-8 text-center text-slate-500">Loading reports...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Email Report Modal -->
+    <div id="emailModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold">📧 Email Report to Client</h3>
+                <button onclick="closeEmailModal()" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+            </div>
+
+            <p class="text-slate-400 text-sm mb-4">
+                Send the report as a PDF attachment. The email includes a summary of the check results.
+            </p>
+
+            <div class="mb-4">
+                <label class="block text-slate-400 text-sm mb-2">Report</label>
+                <div id="emailReportName" class="text-blue-400 text-sm bg-slate-800 rounded-lg px-4 py-3"></div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-slate-400 text-sm mb-2">Recipient Email Addresses</label>
+                <div class="flex gap-2 mb-2">
+                    <input type="email" id="emailInput"
+                        class="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white text-sm focus:border-blue-500 focus:outline-none"
+                        placeholder="client@example.com" onkeypress="if(event.key==='Enter')addEmail()">
+                    <button onclick="addEmail()" class="btn-primary px-4 py-2 rounded-lg text-sm">Add</button>
+                </div>
+                <div id="emailTags" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <div id="emailStatus" class="mb-4 hidden"></div>
+
+            <div class="flex gap-3 justify-end">
+                <button onclick="closeEmailModal()" class="btn-secondary px-6 py-2 rounded-lg text-sm">Cancel</button>
+                <button id="sendEmailBtn" onclick="sendReportEmail()"
+                    class="btn-email px-6 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+                    <span>📧</span> Send Email
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let selectedMode = 'quick';
+        let socket = null;
+        let isRunning = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initSocket();
+            loadReports();
+            updateTime();
+            setInterval(updateTime, 1000);
+        });
+
+        function updateTime() {
+            document.getElementById('currentTime').textContent = new Date().toLocaleString();
+        }
+
+        // Socket.IO
+        function initSocket() {
+            socket = io();
+
+            socket.on('connect', () => {
+                console.log('Connected to server');
+                document.getElementById('statusIndicator').innerHTML = `
+                    <div class="w-3 h-3 rounded-full bg-green-500 status-pulse"></div>
+                    <span class="text-sm">Connected</span>
+                `;
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server');
+                document.getElementById('statusIndicator').innerHTML = `
+                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                    <span class="text-sm">Disconnected</span>
+                `;
+            });
+
+            socket.on('log_message', (data) => {
+                appendLog(data.message, data.level);
+            });
+
+            socket.on('check_progress', (data) => {
+                appendLog(`[${data.stage}] ${data.message}`, 'INFO');
+            });
+
+            socket.on('check_complete', (result) => {
+                isRunning = false;
+                updateRunButton();
+                if (result.stopped) {
+                    appendLog('⏹️ Check stopped by user', 'WARNING');
+                } else {
+                    appendLog('✅ Check completed!', 'INFO');
+                }
+                updateResults(result);
+                loadReports();
+            });
+
+            socket.on('check_error', (data) => {
+                isRunning = false;
+                updateRunButton();
+                appendLog(`❌ Error: ${data.error}`, 'ERROR');
+            });
+        }
+
+        // Mode selection
+        function selectMode(mode) {
+            selectedMode = mode;
+            document.querySelectorAll('.mode-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`.mode-card[data-mode="${mode}"]`).classList.add('selected');
+        }
+
+        // Save URL
+        async function saveUrl() {
+            const url = document.getElementById('websiteUrl').value.trim();
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/config/url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    appendLog(`✅ URL updated to: ${data.url}`, 'INFO');
+                } else {
+                    appendLog(`❌ Failed to update URL: ${data.message}`, 'ERROR');
+                }
+            } catch (err) {
+                appendLog(`❌ Error: ${err.message}`, 'ERROR');
+            }
+        }
+
+        // Run check
+        async function runCheck() {
+            if (isRunning) return;
+
+            const url = document.getElementById('websiteUrl').value.trim();
+            const pages = document.getElementById('pagesToCheck').value.trim();
+            const limit = parseInt(document.getElementById('itemLimit').value) || 0;
+            const useBrowser = document.getElementById('useBrowser').checked;
+            const browserVisible = document.getElementById('browserVisible').checked;
+
+            isRunning = true;
+            updateRunButton();
+            clearLogs();
+            appendLog(`🚀 Starting ${selectedMode} check...`, 'INFO');
+
+            try {
+                const response = await fetch('/api/check/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mode: selectedMode,
+                        url: url,
+                        pages: pages,
+                        limit: limit,
+                        use_browser: useBrowser,
+                        headless: !browserVisible,
+                        generate_report: true
+                    })
+                });
+                const data = await response.json();
+                if (data.status === 'error') {
+                    appendLog(`❌ ${data.message}`, 'ERROR');
+                    isRunning = false;
+                    updateRunButton();
+                }
+            } catch (err) {
+                appendLog(`❌ Error: ${err.message}`, 'ERROR');
+                isRunning = false;
+                updateRunButton();
+            }
+        }
+
+        async function stopCheck() {
+            try {
+                const response = await fetch('/api/check/stop', { method: 'POST' });
+                const data = await response.json();
+                if (data.status === 'stopped') {
+                    appendLog('⏹️ Stop requested - finishing current operation...', 'WARNING');
+                    // The check_complete event will handle resetting the UI
+                } else {
+                    appendLog(`⚠️ ${data.message}`, 'WARNING');
+                }
+            } catch (err) {
+                appendLog(`❌ Stop failed: ${err.message}`, 'ERROR');
+            }
+        }
+
+        function updateRunButton() {
+            const btn = document.getElementById('runCheckBtn');
+            const stopBtn = document.getElementById('stopCheckBtn');
+            const icon = document.getElementById('runBtnIcon');
+            const text = document.getElementById('runBtnText');
+
+            if (isRunning) {
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+                icon.textContent = '⏳';
+                text.textContent = 'Running...';
+                stopBtn.classList.remove('hidden');
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+                icon.textContent = '▶️';
+                text.textContent = 'Run Check';
+                stopBtn.classList.add('hidden');
+            }
+        }
+
+        // Logs
+        function appendLog(message, level = 'INFO') {
+            const container = document.getElementById('logContainer');
+
+            // Remove placeholder if exists
+            const placeholder = container.querySelector('.text-slate-500.text-center');
+            if (placeholder) {
+                container.innerHTML = '';
+            }
+
+            const logLine = document.createElement('div');
+
+            // Check if this is a separator line
+            if (message.includes('===')) {
+                logLine.className = 'log-line text-blue-400 font-bold bg-blue-500/10 py-2';
+            } else if (message.includes('Running') && message.includes('monitor')) {
+                logLine.className = 'log-line text-cyan-400 font-semibold';
+            } else {
+                logLine.className = `log-line log-${level}`;
+            }
+
+            logLine.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(logLine);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearLogs() {
+            const container = document.getElementById('logContainer');
+            container.innerHTML = `
+                <div class="text-slate-500 text-center py-8">
+                    Logs will appear here when you run a check...
+                </div>
+            `;
+        }
+
+        // Results
+        function updateResults(result) {
+            document.getElementById('criticalCount').textContent = result.critical_issues || 0;
+            document.getElementById('highCount').textContent = result.high_issues || 0;
+            document.getElementById('mediumCount').textContent = result.medium_issues || 0;
+            document.getElementById('lowCount').textContent = result.low_issues || 0;
+
+            const details = document.getElementById('resultDetails');
+            let html = '<div class="space-y-2">';
+
+            if (result.report_path) {
+                const reportName = result.report_path.split(/[\/\\]/).pop();
+                html += `
+                    <div class="flex justify-between items-center p-3 bg-blue-500/20 rounded-lg">
+                        <span>📄 Report Generated</span>
+                        <div class="flex items-center gap-2">
+                            <a href="/reports/${reportName}" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm">View HTML →</a>
+                            <button onclick="generatePDF('${reportName}')" class="btn-pdf px-3 py-1 rounded text-xs font-medium">📥 PDF</button>
+                            <button onclick="openEmailModal('${reportName}')" class="btn-email px-3 py-1 rounded text-xs font-medium">📧 Email</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div class="p-2 bg-slate-700/50 rounded">Duration: <span class="font-semibold">${(result.duration || 0).toFixed(2)}s</span></div>
+                    <div class="p-2 bg-slate-700/50 rounded">Response: <span class="font-semibold">${result.avg_response_time || 0}ms</span></div>
+                    <div class="p-2 bg-slate-700/50 rounded">Uptime: <span class="font-semibold">${(result.uptime || 100).toFixed(1)}%</span></div>
+                    <div class="p-2 bg-slate-700/50 rounded">Total Issues: <span class="font-semibold">${result.total_issues || 0}</span></div>
+                </div>
+            `;
+
+            html += '</div>';
+            details.innerHTML = html;
+        }
+
+        // Reports
+        async function loadReports() {
+            try {
+                const response = await fetch('/api/reports');
+                const reports = await response.json();
+
+                const tbody = document.getElementById('reportsTableBody');
+
+                if (reports.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-500">No reports yet</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = reports.map(report => `
+                    <tr class="report-row border-b border-slate-700/50">
+                        <td class="py-3 pr-4">
+                            <a href="/reports/${report.filename}" target="_blank" class="text-blue-400 hover:text-blue-300">
+                                ${report.filename}
+                            </a>
+                        </td>
+                        <td class="py-3 pr-4">
+                            <span class="px-2 py-1 rounded text-xs ${getModeClass(report.mode)}">${report.mode}</span>
+                        </td>
+                        <td class="py-3 pr-4 text-slate-400">${report.created}</td>
+                        <td class="py-3 pr-4 text-slate-400">${report.size_kb} KB</td>
+                        <td class="py-3">
+                            <div class="flex items-center gap-2">
+                                <button onclick="generatePDF('${report.filename}')" class="btn-pdf px-2 py-1 rounded text-xs font-medium" title="Download as PDF">
+                                    📥 PDF
+                                </button>
+                                <button onclick="openEmailModal('${report.filename}')" class="btn-email px-2 py-1 rounded text-xs font-medium" title="Email to client">
+                                    📧 Email
+                                </button>
+                                <button onclick="deleteReport('${report.filename}')" class="text-red-400 hover:text-red-300 text-sm" title="Delete report">
+                                    🗑️
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Failed to load reports:', err);
+            }
+        }
+
+        function getModeClass(mode) {
+            const classes = {
+                'fast': 'bg-cyan-500/20 text-cyan-400',
+                'img': 'bg-purple-500/20 text-purple-400',
+                'vid': 'bg-red-500/20 text-red-400',
+                'chk': 'bg-green-500/20 text-green-400',
+                'full': 'bg-blue-500/20 text-blue-400'
+            };
+            return classes[mode] || 'bg-slate-500/20 text-slate-400';
+        }
+
+        async function deleteReport(filename) {
+            if (!confirm(`Delete report: ${filename}?`)) return;
+
+            try {
+                const response = await fetch(`/api/reports/${filename}`, { method: 'DELETE' });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    loadReports();
+                    appendLog(`🗑️ Deleted report: ${filename}`, 'INFO');
+                } else {
+                    appendLog(`❌ Failed to delete: ${data.message}`, 'ERROR');
+                }
+            } catch (err) {
+                appendLog(`❌ Error: ${err.message}`, 'ERROR');
+            }
+        }
+
+        // ========== PDF Generation ==========
+        async function generatePDF(filename) {
+            appendLog(`📥 Generating PDF from ${filename}...`, 'INFO');
+
+            try {
+                const response = await fetch(`/api/reports/${filename}/pdf`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    appendLog(`✅ PDF generated: ${data.pdf_filename}`, 'INFO');
+                    // Open PDF in new tab for download
+                    window.open(data.pdf_url, '_blank');
+                    loadReports();
+                } else {
+                    appendLog(`❌ PDF generation failed: ${data.message}`, 'ERROR');
+                    alert(`PDF generation failed: ${data.message}`);
+                }
+            } catch (err) {
+                appendLog(`❌ Error: ${err.message}`, 'ERROR');
+                alert(`Error generating PDF: ${err.message}`);
+            }
+        }
+
+        // ========== Email Report ==========
+        let emailRecipients = [];
+        let currentEmailReport = '';
+
+        function openEmailModal(filename) {
+            currentEmailReport = filename;
+            emailRecipients = [];
+            document.getElementById('emailReportName').textContent = `📄 ${filename}`;
+            document.getElementById('emailTags').innerHTML = '';
+            document.getElementById('emailInput').value = '';
+            document.getElementById('emailStatus').className = 'mb-4 hidden';
+            document.getElementById('sendEmailBtn').disabled = false;
+            document.getElementById('sendEmailBtn').innerHTML = '<span>📧</span> Send Email';
+            document.getElementById('emailModal').classList.add('active');
+
+            // Load configured default recipients
+            loadDefaultRecipients();
+        }
+
+        function closeEmailModal() {
+            document.getElementById('emailModal').classList.remove('active');
+        }
+
+        async function loadDefaultRecipients() {
+            try {
+                const response = await fetch('/api/email/config');
+                const config = await response.json();
+
+                if (!config.configured) {
+                    showEmailStatus('⚠️ SMTP not configured. Set SMTP_USERNAME and SMTP_PASSWORD env variables.', 'warning');
+                }
+
+                // Add default recipients if any
+                if (config.default_recipients && config.default_recipients.length > 0) {
+                    config.default_recipients.forEach(email => {
+                        if (email && email.includes('@') && !email.includes('example.com')) {
+                            addEmailToList(email);
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to load email config:', err);
+            }
+        }
+
+        function addEmail() {
+            const input = document.getElementById('emailInput');
+            const email = input.value.trim();
+
+            if (!email) return;
+
+            // Basic email validation
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(email)) {
+                showEmailStatus('❌ Please enter a valid email address.', 'error');
+                return;
+            }
+
+            if (emailRecipients.includes(email)) {
+                showEmailStatus('⚠️ This email is already added.', 'warning');
+                return;
+            }
+
+            addEmailToList(email);
+            input.value = '';
+            input.focus();
+            hideEmailStatus();
+        }
+
+        function addEmailToList(email) {
+            if (emailRecipients.includes(email)) return;
+            emailRecipients.push(email);
+            renderEmailTags();
+        }
+
+        function removeEmail(email) {
+            emailRecipients = emailRecipients.filter(e => e !== email);
+            renderEmailTags();
+        }
+
+        function renderEmailTags() {
+            const container = document.getElementById('emailTags');
+            container.innerHTML = emailRecipients.map(email => `
+                <span class="email-tag">
+                    ${email}
+                    <span class="remove" onclick="removeEmail('${email}')">&times;</span>
+                </span>
+            `).join('');
+        }
+
+        function showEmailStatus(message, type = 'info') {
+            const el = document.getElementById('emailStatus');
+            const colors = {
+                'info': 'bg-blue-500/20 border-blue-500/30 text-blue-300',
+                'success': 'bg-green-500/20 border-green-500/30 text-green-300',
+                'error': 'bg-red-500/20 border-red-500/30 text-red-300',
+                'warning': 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300'
+            };
+            el.className = `mb-4 p-3 rounded-lg border text-sm ${colors[type] || colors.info}`;
+            el.textContent = message;
+        }
+
+        function hideEmailStatus() {
+            document.getElementById('emailStatus').className = 'mb-4 hidden';
+        }
+
+        async function sendReportEmail() {
+            if (emailRecipients.length === 0) {
+                showEmailStatus('❌ Please add at least one recipient email.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('sendEmailBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Sending...';
+            showEmailStatus('📤 Generating PDF and sending email...', 'info');
+
+            try {
+                const response = await fetch(`/api/reports/${currentEmailReport}/email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ emails: emailRecipients })
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showEmailStatus(`✅ ${data.message}`, 'success');
+                    appendLog(`📧 ${data.message}`, 'INFO');
+                    btn.innerHTML = '<span>✅</span> Sent!';
+
+                    // Close modal after 2 seconds
+                    setTimeout(() => {
+                        closeEmailModal();
+                        loadReports();
+                    }, 2000);
+                } else {
+                    showEmailStatus(`❌ ${data.message}`, 'error');
+                    appendLog(`❌ Email failed: ${data.message}`, 'ERROR');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>📧</span> Retry';
+                }
+            } catch (err) {
+                showEmailStatus(`❌ Error: ${err.message}`, 'error');
+                appendLog(`❌ Email error: ${err.message}`, 'ERROR');
+                btn.disabled = false;
+                btn.innerHTML = '<span>📧</span> Retry';
+            }
+        }
+    </script>
+</body>
+
+</html>

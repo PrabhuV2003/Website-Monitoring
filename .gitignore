@@ -1,51 +1,56 @@
-*.pyc
+# Python
 __pycache__/
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
-env/
 venv/
-*.egg-info/
-dist/
+env/
+ENV/
 build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Environment variables (IMPORTANT: Never commit!)
-.env
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Logs
+# Reports and logs - Don't upload to GitHub
+reports/
 logs/
 *.log
 
-# Reports and screenshots
-reports/
-screenshots/
-*.pdf
-*.html
+# Environment variables - IMPORTANT: Contains passwords!
+.env
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
+# OS files
 .DS_Store
 Thumbs.db
+*.swp
+.idea/
+.vscode/
 
-# Playwright browsers
-.ms-playwright/
-playwright/
+# Browser data
+playwright/.browser/
+.playwright/
 
-# Node modules (if any)
-node_modules/
+# Data files
+data/
+*.db
+*.sqlite
 
 # Temporary files
-tmp/
-temp/
 *.tmp
+~*
+*.bak
+
+# Test files
+test_output/

@@ -2,7 +2,7 @@
 WordPress Monitor Scheduler - Ascent Innovation
 ================================================
 Monitors: https://www.ascent365.com
-Schedule: Daily at 9:50 AM
+Schedule: Daily at 6:00 AM
 Email: prabhuofficial2003@gmail.com
 """
 import os
@@ -128,7 +128,7 @@ def run_scheduler():
             logger.info(f"   - Medium: {result.get('medium_issues', 0)}")
             logger.info(f"   - Low: {result.get('low_issues', 0)}")
             logger.info("="*60)
-            logger.info(" Next check: Tomorrow at 9:50 AM")
+            logger.info(" Next check: Tomorrow at 6:00 AM")
             logger.info("="*60)
             
         except Exception as e:
@@ -172,7 +172,7 @@ def run_scheduler():
         scheduler.start()
         logger.info(" Scheduler started successfully!")
         logger.info(" Waiting for scheduled jobs...")
-        logger.info("   Next run: Daily at 9:50 AM (Asia/Kolkata)")
+        logger.info("   Next run: Daily at 6:00 AM (Asia/Kolkata)")
         logger.info("")
         logger.info(" TIP: Press Ctrl+C anytime to stop")
         
