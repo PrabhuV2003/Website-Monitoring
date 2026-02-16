@@ -118,8 +118,8 @@ class ConfigLoader:
         return self.get('critical_pages', default=['/'])
     
     def get_forms_config(self) -> list:
-        """Get forms configuration for testing."""
-        return self.get('forms_to_test', default=[])
+        """Get forms configuration for testing. Supports both 'forms_to_test' and 'forms' keys."""
+        return self.get('forms_to_test', default=[]) or self.get('forms', default=[])
     
     def get_alert_config(self) -> Dict[str, Any]:
         """Get alert configuration."""

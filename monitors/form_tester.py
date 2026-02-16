@@ -27,46 +27,37 @@ class FormTester(BaseMonitor):
         return "forms"
     
     def run(self) -> List[MonitorResult]:
-        """Run form tests."""
+        """Run form tests only on URLs defined in config (forms or forms_to_test)."""
         self.results = []
         self.logger.info("Starting form tests")
         
-        forms_config = self.config.get('forms_to_test', [])
+        # Support both 'forms_to_test' and 'forms' config keys
+        forms_config = self.config.get('forms_to_test', []) or self.config.get('forms', [])
         
         if not forms_config:
-            # Auto-detect forms
-            self._auto_detect_forms()
-        else:
-            for form_config in forms_config:
-                # Log CAPTCHA info
-                if form_config.get('has_captcha'):
-                    self.logger.info(f"Form on {form_config.get('path')} has CAPTCHA - using dry run mode")
-                self._test_form(form_config)
+            self.logger.info("No forms configured in config file - skipping form tests")
+            self.add_result('success', 'No forms configured for testing - skipped',
+                           details={'reason': 'No form URLs defined in config'})
+            return self.results
+        
+        self.logger.info(f"Found {len(forms_config)} form(s) configured for testing")
+        
+        for form_config in forms_config:
+            form_url = form_config.get('url') or form_config.get('path', '/')
+            form_name = form_config.get('name', form_url)
+            self.logger.info(f"Testing form: {form_name} on {form_url}")
+            
+            # Log CAPTCHA info
+            if form_config.get('has_captcha'):
+                self.logger.info(f"Form on {form_url} has CAPTCHA - using dry run mode")
+            
+            # Normalize: ensure 'path' key exists for _test_form compatibility
+            if 'path' not in form_config and 'url' in form_config:
+                form_config['path'] = form_config['url']
+            
+            self._test_form(form_config)
         
         return self.results
-    
-    def _auto_detect_forms(self):
-        """Auto-detect and check forms on critical pages."""
-        pages = self.config.get('critical_pages', ['/'])
-        
-        for page in pages:
-            url = self.get_full_url(page)
-            try:
-                response = requests.get(url, timeout=15,
-                    headers={'User-Agent': 'WordPress-Monitor/1.0'})
-                soup = BeautifulSoup(response.text, 'html.parser')
-                forms = soup.find_all('form')
-                
-                if forms:
-                    self.add_result('success', f'Found {len(forms)} form(s) on {page}',
-                                   url=url, details={'form_count': len(forms)})
-                    
-                    for i, form in enumerate(forms):
-                        self._analyze_form(form, url, i)
-                        
-            except Exception as e:
-                self.add_result('error', f'Failed to detect forms on {page}: {str(e)[:50]}',
-                               severity='medium', url=url)
     
     def _analyze_form(self, form, page_url: str, index: int):
         """Analyze a form's structure."""

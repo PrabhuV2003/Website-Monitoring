@@ -16,7 +16,7 @@ wordpress_auth:
 # Monitoring Schedule
 schedule:
   check_interval: "daily"  # daily, hourly, or custom cron expression
-  check_time: "11:00"      # Time to run daily checks (24-hour format)
+  check_time: "14:10"      # Time to run daily checks (24-hour format)
   timezone: "Asia/Kolkata"
 
 # Alert Configuration
