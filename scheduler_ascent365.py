@@ -3,7 +3,7 @@ WordPress Monitor Scheduler - Ascent Innovation
 ================================================
 Monitors: https://www.ascent365.com
 Schedule: Daily at 6:00 AM
-Email: prabhuofficial2003@gmail.com
+Email: john@nevastech.com
 """
 import os
 import sys
@@ -54,7 +54,7 @@ def run_scheduler():
     logger.info("="*60)
     logger.info("Website: https://www.ascent365.com")
     logger.info(f"Schedule: Daily at {schedule_time} (Asia/Kolkata)")
-    logger.info("Email: prabhuofficial2003@gmail.com")
+    logger.info("Email: john@nevastech.com")
     logger.info("Pages: /, /about/")
     logger.info("Press Ctrl+C to stop (works immediately!)")
     logger.info("="*60)
@@ -99,7 +99,7 @@ def run_scheduler():
             alert_manager = create_alert_manager(config.to_dict())
             
             email_result = alert_manager.send_report_email(
-                recipient_emails=["prabhuofficial2003@gmail.com"],
+                recipient_emails=["john@nevastech.com"],
                 pdf_path=pdf_path,
                 report_summary={
                     'critical_issues': result.get('critical_issues', 0),
@@ -116,7 +116,7 @@ def run_scheduler():
             )
             
             if email_result.get('status') == 'success':
-                logger.info(f" Email sent successfully to prabhuofficial2003@gmail.com")
+                logger.info(f" Email sent successfully to john@nevastech.com")
             else:
                 logger.error(f" Email failed: {email_result.get('message')}")
             
